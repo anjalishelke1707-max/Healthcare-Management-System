@@ -1,0 +1,327 @@
+
+CREATE DATABASE healthcareSystem;
+USE healthcare_system;
+
+
+
+CREATE TABLE patient (
+    patient_id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    insurance_no VARCHAR(50),
+    insurance_provider VARCHAR(100),
+    address VARCHAR(255),
+    email VARCHAR(100),
+    phone VARCHAR(15),
+    blood_group VARCHAR(10),
+    gender VARCHAR(10),
+    dob DATE
+);
+
+
+
+CREATE TABLE medical_history (
+    history_id INT PRIMARY KEY AUTO_INCREMENT,
+    patient_id INT NOT NULL,
+    history_date DATE,
+    allergies VARCHAR(255),
+    diagnoses VARCHAR(255),
+    medications VARCHAR(255),
+    previous_treatment VARCHAR(255),
+    remarks VARCHAR(500),
+
+    FOREIGN KEY (patient_id)
+        REFERENCES patient(patient_id)
+);
+
+
+
+CREATE TABLE doctor (
+    doctor_id INT PRIMARY KEY AUTO_INCREMENT,
+    doctor_name VARCHAR(100) NOT NULL,
+    specialization VARCHAR(100),
+    degree VARCHAR(100),
+    phone VARCHAR(15),
+    experience INT,
+    joining_date DATE
+);
+
+
+
+CREATE TABLE encounter (
+    encounter_id INT PRIMARY KEY AUTO_INCREMENT,
+    patient_id INT NOT NULL,
+    doctor_id INT NOT NULL,
+    reason VARCHAR(255),
+    encounter_type VARCHAR(50),
+    `date` DATE,
+    discharge_date DATE,
+
+    FOREIGN KEY (patient_id)
+        REFERENCES patient(patient_id),
+
+    FOREIGN KEY (doctor_id)
+        REFERENCES doctor(doctor_id)
+);
+
+
+
+CREATE TABLE report (
+    report_id INT PRIMARY KEY AUTO_INCREMENT,
+    encounter_id INT NOT NULL,
+    `date` DATE,
+    result VARCHAR(500),
+
+    FOREIGN KEY (encounter_id)
+        REFERENCES encounter(encounter_id)
+);
+
+
+
+CREATE TABLE test (
+    test_id INT PRIMARY KEY AUTO_INCREMENT,
+    report_id INT NOT NULL,
+    prescription_id INT,
+    test_type VARCHAR(100),
+    test_name VARCHAR(100),
+    charges DECIMAL(10,2),
+    estimate_time VARCHAR(50),
+
+    FOREIGN KEY (report_id)
+        REFERENCES report(report_id)
+);
+
+
+
+CREATE TABLE medicine (
+    medicine_id INT PRIMARY KEY AUTO_INCREMENT,
+    encounter_id INT,
+    medicine_name VARCHAR(100) NOT NULL,
+    medicine_type VARCHAR(50),
+    instructions VARCHAR(500),
+
+    FOREIGN KEY (encounter_id)
+        REFERENCES encounter(encounter_id)
+);
+
+
+
+CREATE TABLE prescription (
+    prescription_id INT PRIMARY KEY AUTO_INCREMENT,
+    medicine_id INT NOT NULL,
+    doctor_id INT NOT NULL,
+    dispensing VARCHAR(100),
+    duration VARCHAR(50),
+    medications VARCHAR(255),
+    dosage VARCHAR(100),
+    prescription_date DATE,
+
+    FOREIGN KEY (medicine_id)
+        REFERENCES medicine(medicine_id),
+
+    FOREIGN KEY (doctor_id)
+        REFERENCES doctor(doctor_id)
+);
+
+
+ALTER TABLE test
+ADD CONSTRAINT fk_test_prescription
+FOREIGN KEY (prescription_id)
+REFERENCES prescription(prescription_id);
+
+
+
+CREATE TABLE surgery_note (
+    surgery_noteid INT PRIMARY KEY AUTO_INCREMENT,
+    surgery_id INT,
+    encounter_id INT NOT NULL,
+    note_date DATE,
+    observations VARCHAR(500),
+    recommendations VARCHAR(500),
+
+    FOREIGN KEY (encounter_id)
+        REFERENCES encounter(encounter_id)
+);
+
+
+
+CREATE TABLE surgery (
+    surgery_id INT PRIMARY KEY AUTO_INCREMENT,
+    patient_id INT NOT NULL,
+    surgery_noteid INT,
+    surgery_name VARCHAR(150),
+    surgery_date DATE,
+    charges DECIMAL(10,2),
+    status VARCHAR(50),
+
+    FOREIGN KEY (patient_id)
+        REFERENCES patient(patient_id),
+
+    FOREIGN KEY (surgery_noteid)
+        REFERENCES surgery_note(surgery_noteid)
+);
+
+ALTER TABLE surgery_note
+ADD CONSTRAINT fk_surgery_note_surgery
+FOREIGN KEY (surgery_id)
+REFERENCES surgery(surgery_id);
+
+
+INSERT INTO patient
+(first_name, last_name, insurance_no, insurance_provider, address, email, phone, blood_group, gender, dob)
+VALUES
+('Aarav', 'Sharma', 'INS1001', 'Star Health', 'Pune, Maharashtra', 'aarav.sharma@gmail.com', '9876500001', 'B+', 'Male', '1995-05-12'),
+('Priya', 'Patil', 'INS1002', 'HDFC ERGO', 'Mumbai, Maharashtra', 'priya.patil@gmail.com', '9876500002', 'O+', 'Female', '1998-08-21'),
+('Amit', 'Joshi', 'INS1003', 'ICICI Lombard', 'Nashik, Maharashtra', 'amit.joshi@gmail.com', '9876500003', 'A+', 'Male', '1992-03-15'),
+('Sneha', 'Deshmukh', 'INS1004', 'Star Health', 'Pune, Maharashtra', 'sneha.d@gmail.com', '9876500004', 'AB+', 'Female', '1997-11-09'),
+('Rohan', 'Kulkarni', 'INS1005', 'Bajaj Allianz', 'Kolhapur, Maharashtra', 'rohan.k@gmail.com', '9876500005', 'O-', 'Male', '1990-01-25'),
+('Neha', 'Shinde', 'INS1006', 'Care Health', 'Satara, Maharashtra', 'neha.shinde@gmail.com', '9876500006', 'A-', 'Female', '1996-06-18'),
+('Vivek', 'Pawar', 'INS1007', 'Niva Bupa', 'Pune, Maharashtra', 'vivek.pawar@gmail.com', '9876500007', 'B-', 'Male', '1988-09-30'),
+('Kavya', 'More', 'INS1008', 'Star Health', 'Aurangabad, Maharashtra', 'kavya.more@gmail.com', '9876500008', 'O+', 'Female', '2000-02-14'),
+('Sagar', 'Jadhav', 'INS1009', 'HDFC ERGO', 'Solapur, Maharashtra', 'sagar.jadhav@gmail.com', '9876500009', 'AB-', 'Male', '1993-12-05'),
+('Pooja', 'Gaikwad', 'INS1010', 'ICICI Lombard', 'Pune, Maharashtra', 'pooja.gaikwad@gmail.com', '9876500010', 'A+', 'Female', '1999-07-22');
+
+
+
+INSERT INTO doctor
+(doctor_name, specialization, degree, phone, experience, joining_date)
+VALUES
+('Dr. Anil Mehta', 'Cardiologist', 'MBBS, MD', '9123400001', 12, '2015-06-10'),
+('Dr. Neha Shah', 'Dermatologist', 'MBBS, MD', '9123400002', 8, '2018-04-15'),
+('Dr. Raj Verma', 'Orthopedic', 'MBBS, MS', '9123400003', 10, '2016-09-20'),
+('Dr. Pooja Kulkarni', 'Gynecologist', 'MBBS, MD', '9123400004', 7, '2019-01-12'),
+('Dr. Sameer Joshi', 'General Physician', 'MBBS, MD', '9123400005', 15, '2010-07-05'),
+('Dr. Meena Desai', 'Neurologist', 'MBBS, DM', '9123400006', 11, '2014-03-18'),
+('Dr. Karan Patil', 'ENT Specialist', 'MBBS, MS', '9123400007', 9, '2017-08-22'),
+('Dr. Ritu Sharma', 'Pediatrician', 'MBBS, MD', '9123400008', 13, '2013-11-10'),
+('Dr. Akshay More', 'Surgeon', 'MBBS, MS', '9123400009', 14, '2012-05-16'),
+('Dr. Swati Joshi', 'Ophthalmologist', 'MBBS, MS', '9123400010', 6, '2020-07-01');
+
+
+
+INSERT INTO medical_history
+(patient_id, history_date, allergies, diagnoses, medications, previous_treatment, remarks)
+VALUES
+(1, '2025-01-10', 'Dust allergy', 'High Blood Pressure', 'Amlodipine', 'BP treatment', 'Regular monitoring required'),
+(2, '2025-02-15', 'None', 'Skin Allergy', 'Cetirizine', 'Antihistamine treatment', 'Condition improved'),
+(3, '2025-03-20', 'Penicillin', 'Knee Pain', 'Ibuprofen', 'Physiotherapy', 'Continue exercises'),
+(4, '2025-04-05', 'Pollen', 'Migraine', 'Sumatriptan', 'Pain management', 'Avoid stress'),
+(5, '2025-05-25', 'None', 'Diabetes', 'Metformin', 'Diabetes management', 'Sugar monitoring required'),
+(6, '2025-06-12', 'Dust', 'Asthma', 'Salbutamol', 'Inhaler treatment', 'Avoid dust exposure'),
+(7, '2025-07-18', 'None', 'Back Pain', 'Paracetamol', 'Physiotherapy', 'Regular exercise advised'),
+(8, '2025-08-22', 'Pollen', 'Allergic Rhinitis', 'Cetirizine', 'Antiallergic treatment', 'Avoid pollen'),
+(9, '2025-09-10', 'None', 'High Cholesterol', 'Atorvastatin', 'Diet control', 'Follow healthy diet'),
+(10, '2025-10-15', 'Latex', 'Eye Infection', 'Antibiotic Drops', 'Eye treatment', 'Follow-up after one week');
+
+
+
+INSERT INTO encounter
+(patient_id, doctor_id, reason, encounter_type, `date`, discharge_date)
+VALUES
+(1, 1, 'Chest pain and high BP', 'Consultation', '2026-01-10', '2026-01-10'),
+(2, 2, 'Skin rash', 'Consultation', '2026-01-12', '2026-01-12'),
+(3, 3, 'Knee pain', 'Follow-up', '2026-01-15', '2026-01-15'),
+(4, 6, 'Severe headache', 'Emergency', '2026-01-18', '2026-01-19'),
+(5, 1, 'Diabetes and BP check', 'Routine Checkup', '2026-01-20', '2026-01-20'),
+(6, 5, 'Breathing problem', 'Emergency', '2026-01-22', '2026-01-22'),
+(7, 3, 'Back pain', 'Consultation', '2026-01-25', '2026-01-25'),
+(8, 2, 'Nasal allergy', 'Consultation', '2026-01-28', '2026-01-28'),
+(9, 5, 'Cholesterol checkup', 'Routine Checkup', '2026-02-01', '2026-02-01'),
+(10, 10, 'Eye infection', 'Consultation', '2026-02-05', '2026-02-05');
+
+
+
+INSERT INTO report
+(encounter_id, `date`, result)
+VALUES
+(1, '2026-01-10', 'Blood pressure slightly high. ECG normal.'),
+(2, '2026-01-12', 'Skin allergy detected. No infection.'),
+(3, '2026-01-15', 'Mild inflammation in knee joint.'),
+(4, '2026-01-18', 'Migraine symptoms observed.'),
+(5, '2026-01-20', 'Blood sugar slightly above normal range.'),
+(6, '2026-01-22', 'Mild asthma symptoms detected.'),
+(7, '2026-01-25', 'Muscle strain observed in lower back.'),
+(8, '2026-01-28', 'Allergic rhinitis confirmed.'),
+(9, '2026-02-01', 'Cholesterol level above normal range.'),
+(10, '2026-02-05', 'Mild eye infection detected.');
+
+
+
+INSERT INTO medicine
+(encounter_id, medicine_name, medicine_type, instructions)
+VALUES
+(1, 'Amlodipine', 'Tablet', 'Take once daily after breakfast'),
+(2, 'Cetirizine', 'Tablet', 'Take once at night'),
+(3, 'Ibuprofen', 'Tablet', 'Take after food when required'),
+(4, 'Sumatriptan', 'Tablet', 'Take during migraine attack'),
+(5, 'Metformin', 'Tablet', 'Take twice daily after meals'),
+(6, 'Salbutamol', 'Inhaler', 'Use when breathing difficulty occurs'),
+(7, 'Paracetamol', 'Tablet', 'Take after food when required'),
+(8, 'Loratadine', 'Tablet', 'Take once daily'),
+(9, 'Atorvastatin', 'Tablet', 'Take once at night'),
+(10, 'Moxifloxacin', 'Eye Drops', 'Use three times daily');
+
+
+
+INSERT INTO prescription
+(medicine_id, doctor_id, dispensing, duration, medications, dosage, prescription_date)
+VALUES
+(1, 1, 'Pharmacy', '30 Days', 'Amlodipine', '5 mg once daily', '2026-01-10'),
+(2, 2, 'Pharmacy', '10 Days', 'Cetirizine', '10 mg once daily', '2026-01-12'),
+(3, 3, 'Pharmacy', '7 Days', 'Ibuprofen', '400 mg twice daily', '2026-01-15'),
+(4, 6, 'Pharmacy', '5 Days', 'Sumatriptan', '50 mg when required', '2026-01-18'),
+(5, 1, 'Pharmacy', '30 Days', 'Metformin', '500 mg twice daily', '2026-01-20'),
+(6, 5, 'Pharmacy', '15 Days', 'Salbutamol', '2 puffs when required', '2026-01-22'),
+(7, 3, 'Pharmacy', '7 Days', 'Paracetamol', '500 mg twice daily', '2026-01-25'),
+(8, 2, 'Pharmacy', '10 Days', 'Loratadine', '10 mg once daily', '2026-01-28'),
+(9, 5, 'Pharmacy', '30 Days', 'Atorvastatin', '20 mg once daily', '2026-02-01'),
+(10, 10, 'Pharmacy', '7 Days', 'Moxifloxacin', '1 drop three times daily', '2026-02-05');
+
+
+
+INSERT INTO test
+(report_id, prescription_id, test_type, test_name, charges, estimate_time)
+VALUES
+(1, 1, 'Blood Test', 'Complete Blood Count', 500.00, '2 Hours'),
+(2, 2, 'Blood Test', 'Allergy Test', 800.00, '4 Hours'),
+(3, 3, 'Imaging', 'Knee X-Ray', 700.00, '1 Hour'),
+(4, 4, 'Blood Test', 'Blood Sugar Test', 300.00, '1 Hour'),
+(5, 5, 'Blood Test', 'HbA1c Test', 600.00, '3 Hours'),
+(6, 6, 'Pulmonary Test', 'Spirometry', 1200.00, '2 Hours'),
+(7, 7, 'Imaging', 'Spine X-Ray', 900.00, '1 Hour'),
+(8, 8, 'Blood Test', 'Allergy Panel', 1500.00, '5 Hours'),
+(9, 9, 'Blood Test', 'Lipid Profile', 700.00, '3 Hours'),
+(10, 10, 'Eye Test', 'Eye Examination', 400.00, '1 Hour');
+
+
+
+INSERT INTO surgery
+(patient_id, surgery_noteid, surgery_name, surgery_date, charges, status)
+VALUES
+(1, NULL, 'Angioplasty', '2026-02-10', 150000.00, 'Completed'),
+(2, NULL, 'Skin Biopsy', '2026-02-12', 25000.00, 'Completed'),
+(3, NULL, 'Knee Arthroscopy', '2026-02-15', 85000.00, 'Completed'),
+(4, NULL, 'Migraine Procedure', '2026-02-18', 30000.00, 'Completed'),
+(5, NULL, 'Gallbladder Surgery', '2026-02-20', 95000.00, 'Completed'),
+(6, NULL, 'Bronchoscopy', '2026-02-22', 60000.00, 'Completed'),
+(7, NULL, 'Spinal Procedure', '2026-02-25', 110000.00, 'Scheduled'),
+(8, NULL, 'Nasal Surgery', '2026-02-28', 70000.00, 'Scheduled'),
+(9, NULL, 'Cholesterol Procedure', '2026-03-02', 45000.00, 'Scheduled'),
+(10, NULL, 'Eye Surgery', '2026-03-05', 55000.00, 'Completed');
+
+
+INSERT INTO surgery_note
+(surgery_id, encounter_id, note_date, observations, recommendations)
+VALUES
+(1, 1, '2026-02-10', 'Patient stable after angioplasty.', 'Regular cardiac follow-up'),
+(2, 2, '2026-02-12', 'Skin biopsy completed successfully.', 'Keep area clean'),
+(3, 3, '2026-02-15', 'Knee surgery completed successfully.', 'Physiotherapy recommended'),
+(4, 4, '2026-02-18', 'Procedure completed without complications.', 'Take prescribed medicines'),
+(5, 5, '2026-02-20', 'Gallbladder surgery completed successfully.', 'Follow dietary instructions'),
+(6, 6, '2026-02-22', 'Bronchoscopy completed successfully.', 'Avoid smoking and dust'),
+(7, 7, '2026-02-25', 'Spinal procedure planned.', 'Rest and physiotherapy advised'),
+(8, 8, '2026-02-28', 'Nasal surgery planned.', 'Avoid heavy physical activity'),
+(9, 9, '2026-03-02', 'Procedure scheduled successfully.', 'Follow low-fat diet'),
+(10, 10, '2026-03-05', 'Eye surgery completed successfully.', 'Use prescribed eye drops');
+
+
