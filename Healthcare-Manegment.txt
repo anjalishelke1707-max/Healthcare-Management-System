@@ -325,3 +325,258 @@ VALUES
 (10, 10, '2026-03-05', 'Eye surgery completed successfully.', 'Use prescribed eye drops');
 
 
+SELECT
+    p.patient_id,
+    p.first_name,
+    p.last_name,
+    d.doctor_name,
+    d.specialization,
+    e.reason,
+    e.encounter_type,
+    e.date
+FROM patient p
+INNER JOIN encounter e
+    ON p.patient_id = e.patient_id
+INNER JOIN doctor d
+    ON e.doctor_id = d.doctor_id;
+
+
+SELECT
+    p.first_name,
+    p.last_name,
+    mh.diagnoses,
+    mh.allergies,
+    mh.medications,
+    mh.remarks
+FROM patient p
+INNER JOIN medical_history mh
+    ON p.patient_id = mh.patient_id;
+
+
+SELECT
+    d.doctor_name,
+    d.specialization,
+    pr.medications,
+    pr.dosage,
+    pr.duration,
+    pr.prescription_date
+FROM doctor d
+INNER JOIN prescription pr
+    ON d.doctor_id = pr.doctor_id;
+
+
+SELECT
+    p.first_name,
+    p.last_name,
+    r.result,
+    t.test_name,
+    t.test_type,
+    t.charges
+FROM patient p
+INNER JOIN encounter e
+    ON p.patient_id = e.patient_id
+INNER JOIN report r
+    ON e.encounter_id = r.encounter_id
+INNER JOIN test t
+    ON r.report_id = t.report_id;
+
+
+SELECT
+    specialization,
+    COUNT(*) AS total_doctors
+FROM doctor
+GROUP BY specialization;
+
+
+SELECT
+    encounter_type,
+    COUNT(*) AS total_encounters
+FROM encounter
+GROUP BY encounter_type;
+
+
+SELECT
+    status,
+    COUNT(*) AS total_surgeries
+FROM surgery
+GROUP BY status;
+
+
+SELECT
+    test_type,
+    SUM(charges) AS total_charges,
+    AVG(charges) AS average_charges
+FROM test
+GROUP BY test_type;
+
+
+SELECT
+    encounter_type,
+    COUNT(*) AS total_encounters
+FROM encounter
+GROUP BY encounter_type
+HAVING COUNT(*) > 1;
+
+
+SELECT
+    test_type,
+    AVG(charges) AS average_charges
+FROM test
+GROUP BY test_type
+HAVING AVG(charges) > 1000;
+
+
+SELECT
+    status,
+    COUNT(*) AS total_surgeries
+FROM surgery
+GROUP BY status
+HAVING COUNT(*) > 2;
+
+
+SELECT
+    test_name,
+    test_type,
+    charges
+FROM test
+WHERE charges > (
+    SELECT AVG(charges)
+    FROM test
+);
+
+
+SELECT
+    patient_id,
+    first_name,
+    last_name
+FROM patient
+WHERE patient_id IN (
+    SELECT patient_id
+    FROM encounter
+    GROUP BY patient_id
+    HAVING COUNT(*) > 1
+);
+
+
+SELECT
+    surgery_name,
+    charges,
+    status
+FROM surgery
+WHERE charges = (
+    SELECT MAX(charges)
+    FROM surgery
+);
+
+
+SELECT
+    doctor_name,
+    specialization,
+    experience
+FROM doctor
+WHERE experience = (
+    SELECT MAX(experience)
+    FROM doctor
+);
+
+
+DELIMITER //
+
+CREATE PROCEDURE GetAllPatients()
+BEGIN
+    SELECT *
+    FROM patient;
+END //
+
+DELIMITER ;
+
+CALL GetAllPatients();
+
+
+DELIMITER //
+
+CREATE PROCEDURE GetPatientById(IN p_id INT)
+BEGIN
+    SELECT *
+    FROM patient
+    WHERE patient_id = p_id;
+END //
+
+DELIMITER ;
+
+CALL GetPatientById(1);
+
+
+DELIMITER //
+
+CREATE PROCEDURE GetDoctorEncounters(IN d_id INT)
+BEGIN
+    SELECT
+        d.doctor_name,
+        p.first_name,
+        p.last_name,
+        e.reason,
+        e.encounter_type,
+        e.date
+    FROM encounter e
+    INNER JOIN doctor d
+        ON e.doctor_id = d.doctor_id
+    INNER JOIN patient p
+        ON e.patient_id = p.patient_id
+    WHERE d.doctor_id = d_id;
+END //
+
+DELIMITER ;
+
+CALL GetDoctorEncounters(1);
+
+
+DELIMITER //
+
+CREATE TRIGGER ValidateSurgeryCharges
+BEFORE INSERT ON surgery
+FOR EACH ROW
+BEGIN
+    IF NEW.charges < 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Surgery charges cannot be negative';
+    END IF;
+END //
+
+DELIMITER ;
+
+INSERT INTO surgery
+(patient_id, surgery_name, surgery_date, charges, status)
+VALUES
+(1, 'Test Surgery', '2026-04-01', -5000, 'Scheduled');
+
+CREATE TABLE surgery_audit (
+    audit_id INT PRIMARY KEY AUTO_INCREMENT,
+    surgery_id INT,
+    old_status VARCHAR(50),
+    new_status VARCHAR(50),
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+DELIMITER //
+
+CREATE TRIGGER TrackSurgeryStatus
+AFTER UPDATE ON surgery
+FOR EACH ROW
+BEGIN
+    IF NOT (OLD.status <=> NEW.status) THEN
+        INSERT INTO surgery_audit
+            (surgery_id, old_status, new_status)
+        VALUES
+            (OLD.surgery_id, OLD.status, NEW.status);
+    END IF;
+END //
+
+DELIMITER ;
+
+UPDATE surgery
+SET status = 'Completed'
+WHERE surgery_id = 7;
+
+SELECT * FROM surgery_audit;
+
